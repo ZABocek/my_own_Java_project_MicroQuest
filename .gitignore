@@ -1,0 +1,43 @@
+# ── Build output ─────────────────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+
+# ── IDE / editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# ── Maven wrapper ─────────────────────────────────────────────────────────────
+.mvn/
+mvnw
+mvnw.cmd
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── SECRETS — never commit these ─────────────────────────────────────────────
+# Local secret overrides (admin password, SMTP credentials, DB password)
+.env
+*.env
+*.env.*
+application-local.properties
+application-secret*.properties
+secrets/
+
+# ── User-uploaded files ───────────────────────────────────────────────────────
+# GIFs and photo IDs are stored locally; never commit user data
+uploads/
+
+# ── Spring Boot DevTools restart trigger ─────────────────────────────────────
+.reloadtrigger
+

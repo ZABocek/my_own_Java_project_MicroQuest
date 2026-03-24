@@ -1,0 +1,106 @@
+package com.example.microquest.service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
+    private final JavaMailSender mailSender;
+    private final String baseUrl;
+    private final String fromAddress;
+
+    public EmailService(JavaMailSender mailSender,
+                        @Value("${app.base-url:http://localhost:8080}") String baseUrl,
+                        @Value("${spring.mail.username:}") String fromAddress) {
+        this.mailSender = mailSender;
+        this.baseUrl = baseUrl;
+        this.fromAddress = fromAddress;
+    }
+
+    public void sendWelcomeEmail(String toEmail, String displayName, String verificationToken) {
+        String link = baseUrl + "/auth/verify?token=" + verificationToken;
+        String body = "<h2>Welcome to MicroQuest, " + htmlEscape(displayName) + "!</h2>"
+                + "<p>Click below to verify your email address:</p>"
+                + "<p><a href='" + link + "' style='background:#0d6efd;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;'>Verify Email</a></p>"
+                + "<p>If you did not register, please ignore this email.</p>";
+        trySend(toEmail, "MicroQuest – Verify your email", body);
+    }
+
+    public void sendTempBanEmail(String toEmail, String displayName, String reason, String expiryDate, Long banRecordId) {
+        String appealLink = baseUrl + "/appeal/submit/" + banRecordId;
+        String body = "<h2>MicroQuest – Account Temporarily Suspended</h2>"
+                + "<p>Hello " + htmlEscape(displayName) + ",</p>"
+                + "<p>Your account has been temporarily suspended.</p>"
+                + "<p><strong>Reason:</strong> " + htmlEscape(reason) + "</p>"
+                + "<p><strong>Suspension expires:</strong> " + expiryDate + "</p>"
+                + "<p>If you believe this is an error, you may <a href='" + appealLink + "'>submit an appeal</a>.</p>";
+        trySend(toEmail, "MicroQuest – Account Suspended", body);
+    }
+
+    public void sendPermanentBanEmail(String toEmail, String displayName, String reason) {
+        String body = "<h2>MicroQuest – Account Permanently Suspended</h2>"
+                + "<p>Hello " + htmlEscape(displayName) + ",</p>"
+                + "<p>Your account has been permanently suspended from MicroQuest.</p>"
+                + "<p><strong>Reason:</strong> " + htmlEscape(reason) + "</p>";
+        trySend(toEmail, "MicroQuest – Account Permanently Suspended", body);
+    }
+
+    public void sendAppealDecisionEmail(String toEmail, String displayName, boolean accepted, String adminResponse) {
+        String result = accepted ? "Accepted" : "Rejected";
+        String body = "<h2>MicroQuest – Appeal " + result + "</h2>"
+                + "<p>Hello " + htmlEscape(displayName) + ",</p>"
+                + "<p>Your ban appeal has been <strong>" + result.toLowerCase() + "</strong>.</p>"
+                + "<p><strong>Admin response:</strong> " + htmlEscape(adminResponse) + "</p>"
+                + (accepted ? "<p>Your account access has been restored.</p>" : "");
+        trySend(toEmail, "MicroQuest – Appeal " + result, body);
+    }
+
+    public void sendQuestApprovedEmail(String toEmail, String displayName, String questTitle) {
+        String body = "<h2>MicroQuest – Quest Approved!</h2>"
+                + "<p>Hello " + htmlEscape(displayName) + ",</p>"
+                + "<p>Your quest <strong>" + htmlEscape(questTitle) + "</strong> has been approved and is now live!</p>";
+        trySend(toEmail, "MicroQuest – Quest Approved", body);
+    }
+
+    public void sendQuestRejectedEmail(String toEmail, String displayName, String questTitle, String reason) {
+        String body = "<h2>MicroQuest – Quest Not Approved</h2>"
+                + "<p>Hello " + htmlEscape(displayName) + ",</p>"
+                + "<p>Your quest <strong>" + htmlEscape(questTitle) + "</strong> was not approved.</p>"
+                + "<p><strong>Reason:</strong> " + htmlEscape(reason) + "</p>"
+                + "<p>You are welcome to make changes and resubmit.</p>";
+        trySend(toEmail, "MicroQuest – Quest Not Approved", body);
+    }
+
+    private void trySend(String to, String subject, String htmlBody) {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            log.info("[Email] SMTP not configured – skipped. To={} Subject={}", to, subject);
+            return;
+        }
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, false, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            mailSender.send(msg);
+            log.info("[Email] Sent to={} subject={}", to, subject);
+        } catch (MessagingException e) {
+            log.warn("[Email] Failed to send to {}: {}", to, e.getMessage());
+        }
+    }
+
+    private String htmlEscape(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+}

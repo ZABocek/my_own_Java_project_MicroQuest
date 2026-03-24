@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MicroQuest | Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="app-bg">
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<main class="container py-5">
+    <section class="hero-card p-5 rounded-4 mb-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="badge text-bg-light mb-3">Portfolio-ready full stack starter</span>
+                <h1 class="display-5 fw-bold">Tiny adventures. Real users. A scalable database foundation.</h1>
+                <p class="lead text-secondary mt-3">
+                    MicroQuest lets people create, browse, save, and discuss short experiences that are useful,
+                    relaxing, social, or just plain fun.
+                </p>
+                <div class="d-flex gap-3 mt-4 flex-wrap">
+                    <a class="btn btn-primary btn-lg" th:href="@{/quests}">Explore Quests</a>
+                    <a class="btn btn-outline-dark btn-lg" th:href="@{/quests/new}">Create Your First Quest</a>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="row g-3">
+                    <div class="col-4">
+                        <div class="stat-card text-center p-3 rounded-4 bg-white shadow-sm">
+                            <div class="h2 mb-0" th:text="${questCount}">0</div>
+                            <small class="text-muted">Quests</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-card text-center p-3 rounded-4 bg-white shadow-sm">
+                            <div class="h2 mb-0" th:text="${userCount}">0</div>
+                            <small class="text-muted">Users</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-card text-center p-3 rounded-4 bg-white shadow-sm">
+                            <div class="h2 mb-0" th:text="${commentCount}">0</div>
+                            <small class="text-muted">Comments</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h3 mb-0">Recent quests</h2>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/quests}">View all</a>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-xl-4" th:each="quest : ${recentQuests}">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex gap-2 flex-wrap mb-3">
+                            <span class="badge text-bg-primary" th:text="${quest.category}">CATEGORY</span>
+                            <span class="badge text-bg-light" th:text="${quest.difficulty}">DIFFICULTY</span>
+                        </div>
+                        <h3 class="h5" th:text="${quest.title}">Quest title</h3>
+                        <p class="text-muted" th:text="${quest.summary}">Summary</p>
+                        <p class="small text-secondary mb-0">
+                            By <span th:text="${quest.author.displayName}">Author</span>
+                            • <span th:text="${quest.estimatedMinutes}">0</span> min
+                        </p>
+                    </div>
+                    <div class="card-footer bg-white border-0 px-4 pb-4">
+                        <a class="btn btn-outline-dark w-100" th:href="@{|/quests/${quest.id}|}">Open quest</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

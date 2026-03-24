@@ -1,0 +1,50 @@
+body.app-bg {
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    min-height: 100vh;
+}
+
+.hero-card {
+    background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.stat-card {
+    min-height: 110px;
+}
+
+.avatar-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    background: #111827;
+    color: white;
+}
+
+.avatar-circle.large {
+    width: 70px;
+    height: 70px;
+    font-size: 1.5rem;
+}
+
+.comment-card,
+.meta-box {
+    border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.card,
+.btn,
+.form-control,
+.form-select,
+.alert {
+    border-radius: 1rem !important;
+}
+
+.list-group-item {
+    border-left: 0;
+    border-right: 0;
+}

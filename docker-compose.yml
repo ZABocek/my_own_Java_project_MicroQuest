@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    container_name: microquest-db
+    environment:
+      POSTGRES_DB: microquest
+      POSTGRES_USER: microquest
+      POSTGRES_PASSWORD: microquest
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: microquest-app
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/microquest
+      SPRING_DATASOURCE_USERNAME: microquest
+      SPRING_DATASOURCE_PASSWORD: microquest
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
