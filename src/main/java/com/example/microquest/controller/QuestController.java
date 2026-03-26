@@ -60,6 +60,11 @@ public class QuestController {
         form.setAuthorId(currentUser.getId());
         model.addAttribute("questForm", form);
         model.addAttribute("formMode", "create");
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (isAdmin) {
+            model.addAttribute("allUsers", userProfileService.getAllUsers());
+        }
         return "quests/form";
     }
 
@@ -70,13 +75,20 @@ public class QuestController {
                               Model model,
                               RedirectAttributes redirectAttributes) {
         if (userDetails == null) return "redirect:/auth/login";
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (bindingResult.hasErrors()) {
             model.addAttribute("formMode", "create");
+            if (isAdmin) {
+                model.addAttribute("allUsers", userProfileService.getAllUsers());
+            }
             return "quests/form";
         }
-        // Enforce current user as author (prevent form tampering)
-        UserProfile currentUser = userProfileService.getByUsername(userDetails.getUsername());
-        questForm.setAuthorId(currentUser.getId());
+        if (!isAdmin) {
+            // Enforce current user as author (prevent form tampering)
+            UserProfile currentUser = userProfileService.getByUsername(userDetails.getUsername());
+            questForm.setAuthorId(currentUser.getId());
+        }
         Quest quest = questService.createQuest(questForm);
         String msg = quest.getStatus().name().equals("APPROVED")
                 ? "Quest created and is now live!"
@@ -131,6 +143,11 @@ public class QuestController {
         model.addAttribute("questId", id);
         model.addAttribute("questForm", form);
         model.addAttribute("formMode", "edit");
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (isAdmin) {
+            model.addAttribute("allUsers", userProfileService.getAllUsers());
+        }
         return "quests/form";
     }
 
@@ -142,9 +159,19 @@ public class QuestController {
                               Model model,
                               RedirectAttributes redirectAttributes) {
         if (userDetails == null) return "redirect:/auth/login";
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            // Prevent non-admin users from changing the quest author
+            Quest original = questService.getQuestOrThrow(id);
+            questForm.setAuthorId(original.getAuthor().getId());
+        }
         if (bindingResult.hasErrors()) {
             model.addAttribute("questId", id);
             model.addAttribute("formMode", "edit");
+            if (isAdmin) {
+                model.addAttribute("allUsers", userProfileService.getAllUsers());
+            }
             return "quests/form";
         }
         questService.updateQuest(id, questForm);
