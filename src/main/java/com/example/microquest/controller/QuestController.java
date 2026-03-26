@@ -189,8 +189,15 @@ public class QuestController {
         if (userDetails == null) return "redirect:/auth/login";
         if (bindingResult.hasErrors()) {
             Quest quest = questService.getQuestOrThrow(id);
+            UserProfile currentUser = userProfileService.getByUsername(userDetails.getUsername());
+            boolean isAdmin = userDetails.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
             model.addAttribute("quest", quest);
             model.addAttribute("comments", questService.getCommentsForQuest(id));
+            model.addAttribute("hasSubmitted", submissionService.hasSubmitted(currentUser.getId(), id));
+            model.addAttribute("submissions", isAdmin
+                    ? submissionService.getSubmissionsForQuest(id)
+                    : submissionService.getSubmissionsForUserAndQuest(currentUser.getId(), id));
             return "quests/detail";
         }
         UserProfile currentUser = userProfileService.getByUsername(userDetails.getUsername());
