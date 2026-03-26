@@ -96,12 +96,17 @@ public class QuestController {
 
         if (userDetails != null) {
             UserProfile currentUser = userProfileService.getByUsername(userDetails.getUsername());
+            boolean isAdmin = userDetails.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
             model.addAttribute("hasSubmitted",
                     submissionService.hasSubmitted(currentUser.getId(), id));
-            model.addAttribute("submissions", submissionService.getSubmissionsForQuest(id));
+            // Admins see all submissions; regular users see only their own
+            model.addAttribute("submissions", isAdmin
+                    ? submissionService.getSubmissionsForQuest(id)
+                    : submissionService.getSubmissionsForUserAndQuest(currentUser.getId(), id));
         } else {
             model.addAttribute("hasSubmitted", false);
-            model.addAttribute("submissions", submissionService.getSubmissionsForQuest(id));
+            model.addAttribute("submissions", java.util.List.of());
         }
         return "quests/detail";
     }

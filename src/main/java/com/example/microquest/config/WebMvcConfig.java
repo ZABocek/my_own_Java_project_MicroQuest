@@ -16,8 +16,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve GIF uploads publicly
-        registry.addResourceHandler("/uploads/gifs/**")
-                .addResourceLocations("file:" + storageLocation + "/gifs/");
+        // GIF uploads are served via a secured controller endpoint — no public static handler
     }
 }

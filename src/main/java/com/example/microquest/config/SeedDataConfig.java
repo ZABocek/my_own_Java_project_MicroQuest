@@ -91,7 +91,7 @@ public class SeedDataConfig {
 
             Quest q4 = buildQuest("Create a gif of a memorable event",
                     "Capture a moment from your day as an animated GIF and share it with a caption.",
-                    "Use a phone app, screen recorder, or any tool you like to create a short animated GIF of something memorable from your day â€” a funny moment, a beautiful scene, or anything that made you smile. Upload it here with a caption that tells the story.",
+                    "Use a phone app, screen recorder, or any tool you like to create a short animated GIF of something memorable from your day — a funny moment, a beautiful scene, or anything that made you smile. Upload it here with a caption that tells the story.",
                     Category.CREATIVE, Difficulty.EASY, 20, false, "gif,creative,memory,social", drewadoo);
 
             questRepository.save(q1);

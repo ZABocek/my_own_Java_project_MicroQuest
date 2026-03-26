@@ -67,4 +67,33 @@ public class SubmissionService {
     public boolean hasSubmitted(Long userId, Long questId) {
         return submissionRepository.existsByUserIdAndQuestId(userId, questId);
     }
+
+    @Transactional(readOnly = true)
+    public List<QuestSubmission> getSubmissionsForUserAndQuest(Long userId, Long questId) {
+        return submissionRepository.findAllByUserIdAndQuestIdOrderBySubmittedAtDesc(userId, questId);
+    }
+
+    @Transactional(readOnly = true)
+    public QuestSubmission getSubmissionSecure(Long submissionId, Long requestingUserId, boolean isAdmin) {
+        QuestSubmission sub = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
+        if (!isAdmin && !sub.getUser().getId().equals(requestingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        return sub;
+    }
+
+    public void deleteSubmission(Long submissionId, Long requestingUserId, boolean isAdmin) {
+        QuestSubmission sub = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
+        if (!isAdmin && !sub.getUser().getId().equals(requestingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own submissions");
+        }
+        try {
+            fileStorageService.deleteGif(sub.getGifPath());
+        } catch (IOException e) {
+            // best-effort: file may already be gone
+        }
+        submissionRepository.delete(sub);
+    }
 }

@@ -56,6 +56,22 @@ public class FileStorageService {
         return resolved;
     }
 
+    public Path resolveGif(String filename) {
+        Path resolved = storageRoot.resolve("gifs").resolve(filename).normalize();
+        if (!resolved.startsWith(storageRoot.resolve("gifs"))) {
+            throw new IllegalArgumentException("Invalid file path");
+        }
+        return resolved;
+    }
+
+    public void deleteGif(String filename) throws IOException {
+        Path file = storageRoot.resolve("gifs").resolve(filename).normalize();
+        if (!file.startsWith(storageRoot.resolve("gifs"))) {
+            throw new IllegalArgumentException("Invalid filename");
+        }
+        Files.deleteIfExists(file);
+    }
+
     private void validateGifFile(MultipartFile file) {
         if (file.isEmpty()) throw new IllegalArgumentException("File is empty");
         String name = file.getOriginalFilename();

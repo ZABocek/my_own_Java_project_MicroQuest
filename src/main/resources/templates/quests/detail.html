@@ -110,8 +110,9 @@
             <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" sec:authorize="isAuthenticated()">
                 <h2 class="h5">Complete this quest</h2>
                 <p class="text-muted mb-3">Upload a GIF to prove you completed it!</p>
-                <div th:if="${hasSubmitted}" class="alert alert-success mb-2">You've already submitted a GIF for this quest!</div>
-                <a th:unless="${hasSubmitted}" class="btn btn-success w-100" th:href="@{|/quests/${quest.id}/submit|}">Start This Quest</a>
+                <div th:if="${hasSubmitted}" class="alert alert-success mb-2">You've already submitted GIFs for this quest!</div>
+                <a class="btn btn-success w-100" th:href="@{|/quests/${quest.id}/submit|}"
+                   th:text="${hasSubmitted} ? 'Upload More GIFs' : 'Start This Quest'">Start This Quest</a>
             </div>
 
             <!-- Sign in prompt for guests -->
@@ -136,11 +137,11 @@
     <div th:if="${submissions != null and !#lists.isEmpty(submissions)}" class="row mt-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h2 class="h4 mb-4">Quest Completions</h2>
+                <h2 class="h4 mb-4" th:text="${isAdmin} ? 'All Quest Completions' : 'Your Completions'">Your Completions</h2>
                 <div class="row g-3">
                     <div class="col-md-4" th:each="sub : ${submissions}">
                         <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100">
-                            <img th:src="@{|/uploads/gifs/${sub.gifPath}|}" class="card-img-top" alt="Quest completion GIF"
+                            <img th:src="@{|/quests/${quest.id}/submissions/${sub.id}/gif|}" class="card-img-top" alt="Quest completion GIF"
                                  style="max-height:200px; object-fit:cover;">
                             <div class="card-body p-3">
                                 <p class="card-text small" th:text="${sub.caption}"></p>
@@ -149,6 +150,13 @@
                                        th:text="${sub.user.displayName}">User</a>
                                     <small class="text-muted" th:text="${#temporals.format(sub.submittedAt, 'MMM d, yyyy')}">date</small>
                                 </div>
+                                <form th:if="${currentUser != null and (currentUser.id == sub.user.id or isAdmin)}"
+                                      th:action="@{|/quests/${quest.id}/submissions/${sub.id}/delete|}"
+                                      method="post" class="mt-2"
+                                      onsubmit="return confirm('Delete this GIF? This cannot be undone.')"
+                                      sec:authorize="isAuthenticated()">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">Delete GIF</button>
+                                </form>
                             </div>
                         </div>
                     </div>

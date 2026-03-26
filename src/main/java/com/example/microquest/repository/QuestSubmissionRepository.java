@@ -8,4 +8,5 @@ public interface QuestSubmissionRepository extends JpaRepository<QuestSubmission
     List<QuestSubmission> findAllByUserIdOrderBySubmittedAtDesc(Long userId);
     List<QuestSubmission> findAllByQuestIdOrderBySubmittedAtDesc(Long questId);
     boolean existsByUserIdAndQuestId(Long userId, Long questId);
+    List<QuestSubmission> findAllByUserIdAndQuestIdOrderBySubmittedAtDesc(Long userId, Long questId);
 }
