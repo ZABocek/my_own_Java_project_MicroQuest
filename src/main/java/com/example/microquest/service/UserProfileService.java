@@ -104,5 +104,4 @@ public class UserProfileService {
         userReportRepository.deleteByReportedUserOrReportingUser(user, user);
         userProfileRepository.delete(user);
     }
-    }
 }
