@@ -98,6 +98,116 @@ Configured in `src/main/resources/application.properties`:
 - Admin dashboard: manage users, quests, reports, and appeals
 - Seed data loaded automatically on first run
 
+## Database Schema (ERD)
+
+```mermaid
+erDiagram
+    user_profiles {
+        bigint id PK
+        varchar username "UNIQUE NOT NULL, max 40"
+        varchar displayName "NOT NULL, max 80"
+        varchar email "UNIQUE, max 254"
+        varchar passwordHash "max 60"
+        varchar role "NOT NULL: ROLE_USER | ROLE_ADMIN"
+        boolean active "NOT NULL, default true"
+        timestamp bannedUntil
+        int banCount "NOT NULL, default 0"
+        boolean emailVerified "NOT NULL, default false"
+        varchar emailVerificationToken "max 100"
+        varchar photoIdPath "max 500"
+        varchar homeCity "max 120"
+        varchar bio "max 600"
+        timestamp createdAt "NOT NULL"
+    }
+
+    quests {
+        bigint id PK
+        varchar title "NOT NULL, max 120"
+        varchar summary "NOT NULL, max 220"
+        varchar description "NOT NULL, max 2000"
+        varchar category "NOT NULL: FOOD|FITNESS|OUTDOORS|CREATIVE|SOCIAL|LEARNING|RELAXATION|CITY_EXPLORATION"
+        varchar difficulty "NOT NULL: EASY | MEDIUM | HARD"
+        int estimatedMinutes "NOT NULL"
+        boolean indoor "NOT NULL"
+        varchar tags "max 200"
+        varchar status "NOT NULL: PENDING_APPROVAL | APPROVED | REJECTED"
+        timestamp createdAt "NOT NULL"
+        timestamp updatedAt "NOT NULL"
+        bigint author_id FK
+    }
+
+    quest_submissions {
+        bigint id PK
+        bigint quest_id FK
+        bigint user_id FK
+        varchar gifPath "NOT NULL, max 500"
+        varchar caption "max 500"
+        timestamp submittedAt "NOT NULL"
+    }
+
+    comments {
+        bigint id PK
+        varchar body "NOT NULL, max 800"
+        timestamp createdAt "NOT NULL"
+        bigint quest_id FK
+        bigint author_id FK
+    }
+
+    quest_saves {
+        bigint id PK
+        timestamp createdAt "NOT NULL"
+        bigint user_id FK
+        bigint quest_id FK
+    }
+
+    ban_records {
+        bigint id PK
+        bigint user_id FK
+        varchar tier "NOT NULL: ONE_MONTH | THREE_MONTHS | PERMANENT"
+        varchar reason "NOT NULL, max 1000"
+        timestamp bannedAt "NOT NULL"
+        timestamp expiresAt "nullable — null means permanent"
+        varchar appealStatus "NOT NULL: PENDING | ACCEPTED | REJECTED"
+    }
+
+    appeals {
+        bigint id PK
+        bigint ban_record_id FK "UNIQUE (1:1 with ban_records)"
+        bigint user_id FK
+        varchar message "NOT NULL, max 2000"
+        varchar status "NOT NULL: PENDING | ACCEPTED | REJECTED"
+        varchar adminResponse "max 1000"
+        timestamp submittedAt "NOT NULL"
+        timestamp reviewedAt
+    }
+
+    user_reports {
+        bigint id PK
+        bigint reported_user_id FK
+        bigint reporting_user_id FK
+        varchar reason "NOT NULL, max 1000"
+        timestamp reportedAt "NOT NULL"
+        boolean reviewed "NOT NULL, default false"
+    }
+
+    user_profiles ||--o{ quests : "authors"
+    user_profiles ||--o{ quest_submissions : "submits"
+    user_profiles ||--o{ comments : "writes"
+    user_profiles ||--o{ quest_saves : "saves"
+    user_profiles ||--o{ ban_records : "banned via"
+    user_profiles ||--o{ appeals : "files"
+    user_profiles ||--o{ user_reports : "is reported by"
+    user_profiles ||--o{ user_reports : "reports"
+    quests ||--o{ quest_submissions : "receives"
+    quests ||--o{ comments : "has"
+    quests ||--o{ quest_saves : "bookmarked via"
+    ban_records ||--o| appeals : "appealed via"
+```
+
+> **Unique constraint:** `quest_saves(user_id, quest_id)` — a user can bookmark each quest only once.
+>
+> **Enum values** are stored as strings in PostgreSQL (`EnumType.STRING`).
+
 ## Development notes
 
 - `spring.jpa.hibernate.ddl-auto=update` — schema is kept in sync automatically
