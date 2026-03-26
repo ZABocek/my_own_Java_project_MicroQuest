@@ -1,91 +1,105 @@
-# MicroQuest Starter
+﻿# MicroQuest
 
-MicroQuest is a full-stack Spring Boot starter app for a fun challenge-sharing website. Users can create short “micro-adventures”, browse ideas, save favorites, and leave comments.
-
-## Why this app works well as a portfolio project
-
-- It is entertaining and useful.
-- It naturally grows to 7–10 pages.
-- It uses a real relational database that can scale far beyond a toy demo.
-- It gives you room to add authentication, search, notifications, badges, APIs, and analytics later.
-
-## Included pages
-
-1. Home
-2. About
-3. Browse quests
-4. Quest detail
-5. Create / edit quest
-6. Users list
-7. User profile
-8. Create profile
-9. Leaderboard
+MicroQuest is a full-stack Spring Boot web app for a fun challenge-sharing platform. Users register, browse micro-adventure quests, submit GIF completions with captions, and compete on a leaderboard. Admins can manage quests, users, and appeals.
 
 ## Tech stack
 
-- Java 17
-- Spring Boot
-- Spring MVC
+- Java 21
+- Spring Boot 3.5
+- Spring MVC + Spring Security
 - Thymeleaf
 - Spring Data JPA
-- PostgreSQL
+- PostgreSQL 17
 - Maven
-- Docker + Docker Compose
-- Bootstrap via CDN
-- Visual Studio Code friendly project layout
+- Bootstrap 5 via CDN
 
-## Development notes
+## Prerequisites
 
-This project is intentionally kept in development mode:
+Before running the app, make sure the following are installed on your machine:
 
-- PostgreSQL uses `ddl-auto=update` for convenience.
-- Thymeleaf template caching is disabled.
-- Sample seed data is inserted automatically when the database is empty.
-- No paid services are required.
+| Requirement | Version | Notes |
+|---|---|---|
+| JDK 21 | 21+ | Set `JAVA_HOME` to the JDK 21 directory |
+| Maven | 3.9+ | Must be on `PATH` |
+| PostgreSQL | 17 | Running as a local Windows service (`postgresql-x64-17`) |
 
-## Run locally with Docker for PostgreSQL + Maven for the app
+### One-time database setup
 
-### 1. Start the database
+Open a terminal and run:
 
-```bash
-docker compose up db -d
+```sql
+psql -U postgres
+CREATE DATABASE microquest;
+CREATE USER microquest WITH PASSWORD 'microquest';
+GRANT ALL PRIVILEGES ON DATABASE microquest TO microquest;
+\q
 ```
 
-### 2. Run the Spring Boot app from VS Code terminal
+The app uses `ddl-auto=update`, so tables are created automatically on first launch. Sample seed data is inserted when the database is empty.
 
-```bash
+## Starting the app (Windows — simplest method)
+
+From the project root, double-click **`start.bat`** or run in a terminal:
+
+```bat
+start.bat
+```
+
+Or from PowerShell:
+
+```powershell
+.\start.ps1
+```
+
+The launcher will:
+1. Set `JAVA_HOME` and add PostgreSQL `bin` to `PATH`
+2. Verify the PostgreSQL service is running (starts it if stopped)
+3. Run `mvn spring-boot:run`
+4. Open Chrome automatically once the app is ready at `http://localhost:8080`
+
+## Starting the app manually
+
+If you prefer to manage things yourself:
+
+```powershell
+# 1. Set Java 21 (adjust path to match your installation)
+$env:JAVA_HOME = "C:\jdk21\jdk-21.0.8"
+$env:PATH = "$env:JAVA_HOME\bin;" + $env:PATH
+
+# 2. Start PostgreSQL (if not already running)
+Start-Service postgresql-x64-17
+
+# 3. Run the app
 mvn spring-boot:run
 ```
 
-The site will be available at:
+Then open `http://localhost:8080` in your browser.
 
-```text
-http://localhost:8080
-```
+## Database settings
 
-## Run the whole app with Docker Compose
+Configured in `src/main/resources/application.properties`:
 
-```bash
-docker compose up --build
-```
+| Setting | Value |
+|---|---|
+| Database | `microquest` |
+| Username | `microquest` |
+| Password | `microquest` |
+| Host | `localhost` |
+| Port | `5432` |
 
-## Default database settings
+## Features
 
-- Database: `microquest`
-- Username: `microquest`
-- Password: `microquest`
-- Port: `5432`
+- User registration and login with Spring Security
+- Quest browsing, creation, and detail pages
+- Multi-GIF submission with per-GIF captions (up to 50 MB per request)
+- Private GIF access — only the submitting user (or admin) can view their files
+- GIF deletion by the owner
+- Leaderboard
+- Admin dashboard: manage users, quests, reports, and appeals
+- Seed data loaded automatically on first run
 
-You can override them with environment variables.
+## Development notes
 
-## Good next features to add
-
-- Spring Security login / registration
-- Search by tag or city
-- Image uploads for quests
-- Badges and streaks
-- REST API endpoints
-- Pagination for comments
-- Email notifications
-- Admin moderation
-- Leaderboard filters by week / month / all time
+- `spring.jpa.hibernate.ddl-auto=update` — schema is kept in sync automatically
+- `spring.thymeleaf.cache=false` — template changes take effect without restart
+- GIF files are stored locally in the `uploads/gifs/` directory (gitignored)
