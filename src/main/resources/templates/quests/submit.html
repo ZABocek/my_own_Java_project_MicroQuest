@@ -14,8 +14,8 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h1 class="h3 mb-1 fw-bold">Upload Your GIFs</h1>
-                <p class="text-muted mb-4">Add one or more animated GIFs, each with its own caption.</p>
+                <h1 class="h3 mb-1 fw-bold">Upload Your Completion</h1>
+                <p class="text-muted mb-4">Add one or more GIFs, JPEGs, or MP4 videos — each with its own caption.</p>
 
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
                 <div th:if="${gifError}" class="alert alert-danger" th:text="${gifError}"></div>
@@ -34,9 +34,9 @@
                         <div class="gif-entry border rounded-4 p-3 mb-3 bg-light">
                             <p class="fw-semibold small text-muted mb-3">GIF <span class="entry-num">1</span></p>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">GIF file <span class="text-danger">*</span></label>
-                                <input type="file" class="form-control" name="gif" accept=".gif" required>
-                                <div class="form-text">Animated GIF only. Max 10 MB per file.</div>
+                                <label class="form-label fw-semibold">Media file <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" name="gif" accept=".gif,.jpg,.jpeg,.mp4" required>
+                                <div class="form-text">GIF, JPEG, or MP4. Max 25 MB per file.</div>
                             </div>
                             <div>
                                 <label class="form-label fw-semibold">Caption</label>
@@ -76,9 +76,9 @@
             '  <button type="button" class="btn btn-sm btn-outline-danger">Remove</button>' +
             '</div>' +
             '<div class="mb-3">' +
-            '  <label class="form-label fw-semibold">GIF file <span class="text-danger">*</span></label>' +
-            '  <input type="file" class="form-control" name="gif" accept=".gif" required>' +
-            '  <div class="form-text">Animated GIF only. Max 10 MB per file.</div>' +
+            '  <label class="form-label fw-semibold">Media file <span class="text-danger">*</span></label>' +
+            '  <input type="file" class="form-control" name="gif" accept=".gif,.jpg,.jpeg,.mp4" required>' +
+            '  <div class="form-text">GIF, JPEG, or MP4. Max 25 MB per file.</div>' +
             '</div>' +
             '<div>' +
             '  <label class="form-label fw-semibold">Caption</label>' +

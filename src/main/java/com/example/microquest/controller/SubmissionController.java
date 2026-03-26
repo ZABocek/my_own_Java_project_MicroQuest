@@ -58,8 +58,17 @@ public class SubmissionController {
         if (!resource.exists()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+        String path = sub.getGifPath().toLowerCase();
+        MediaType mediaType;
+        if (path.endsWith(".mp4")) {
+            mediaType = MediaType.valueOf("video/mp4");
+        } else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+            mediaType = MediaType.IMAGE_JPEG;
+        } else {
+            mediaType = MediaType.IMAGE_GIF;
+        }
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_GIF)
+                .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
                 .body(resource);
@@ -130,7 +139,7 @@ public class SubmissionController {
             }
         }
         redirectAttributes.addFlashAttribute("gifError",
-                "File too large. Each GIF must be under 20 MB.");
+                "File too large. Each file must be under 25 MB.");
         return "redirect:/quests/" + questId + "/submit";
     }
 

@@ -120,6 +120,22 @@ public class AdminController {
         return "redirect:/admin/users";
     }
 
+    @PostMapping("/users/{id}/delete")
+    public String deleteUser(@PathVariable Long id, RedirectAttributes ra) {
+        UserProfile user = userProfileService.getUserOrThrow(id);
+        if (user.getRole().name().equals("ROLE_ADMIN")) {
+            ra.addFlashAttribute("errorMessage", "Admin accounts cannot be deleted.");
+            return "redirect:/admin/users";
+        }
+        String displayName = user.getDisplayName();
+        if (user.getPhotoIdPath() != null) {
+            try { fileStorageService.deletePhotoId(user.getPhotoIdPath()); } catch (java.io.IOException ignored) {}
+        }
+        userProfileService.deleteUser(id);
+        ra.addFlashAttribute("successMessage", "User \"" + displayName + "\" has been permanently deleted.");
+        return "redirect:/admin/users";
+    }
+
     // ── Appeals ───────────────────────────────────────────────────────────────
 
     @GetMapping("/appeals")

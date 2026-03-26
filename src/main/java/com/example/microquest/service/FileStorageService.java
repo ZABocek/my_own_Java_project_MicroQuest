@@ -31,11 +31,12 @@ public class FileStorageService {
     }
 
     public String storeGif(MultipartFile file, Long userId) throws IOException {
-        validateGifFile(file);
-        String filename = "gif_" + userId + "_" + System.currentTimeMillis() + ".gif";
+        validateMediaFile(file);
+        String ext = getExtension(file.getOriginalFilename());
+        String filename = "media_" + userId + "_" + System.currentTimeMillis() + "." + ext;
         Path destination = storageRoot.resolve("gifs").resolve(filename);
         Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-        return filename; // relative path under /uploads/gifs/
+        return filename;
     }
 
     public String storePhotoId(MultipartFile file, Long userId) throws IOException {
@@ -72,13 +73,23 @@ public class FileStorageService {
         Files.deleteIfExists(file);
     }
 
-    private void validateGifFile(MultipartFile file) {
+    public void deletePhotoId(String filename) throws IOException {
+        Path file = storageRoot.resolve("photo-ids").resolve(filename).normalize();
+        if (!file.startsWith(storageRoot.resolve("photo-ids"))) {
+            throw new IllegalArgumentException("Invalid filename");
+        }
+        Files.deleteIfExists(file);
+    }
+
+    private void validateMediaFile(MultipartFile file) {
         if (file.isEmpty()) throw new IllegalArgumentException("File is empty");
         String name = file.getOriginalFilename();
-        if (name == null || !name.toLowerCase().endsWith(".gif")) {
-            throw new IllegalArgumentException("Only GIF files are allowed");
+        if (name == null) throw new IllegalArgumentException("Invalid file name");
+        String lower = name.toLowerCase();
+        if (!lower.endsWith(".gif") && !lower.endsWith(".jpg") && !lower.endsWith(".jpeg") && !lower.endsWith(".mp4")) {
+            throw new IllegalArgumentException("Only GIF, JPEG, or MP4 files are allowed");
         }
-        if (file.getSize() > 10L * 1024 * 1024) throw new IllegalArgumentException("GIF must be under 10 MB");
+        if (file.getSize() > 25L * 1024 * 1024) throw new IllegalArgumentException("File must be under 25 MB");
     }
 
     private void validateImageFile(MultipartFile file) {
@@ -93,7 +104,7 @@ public class FileStorageService {
     }
 
     private String getExtension(String filename) {
-        if (filename == null || !filename.contains(".")) return "jpg";
-        return filename.substring(filename.lastIndexOf('.') + 1);
+        if (filename == null || !filename.contains(".")) return "bin";
+        return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
     }
 }

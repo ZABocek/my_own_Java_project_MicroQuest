@@ -3,11 +3,13 @@ package com.example.microquest.service;
 import com.example.microquest.dto.UserProfileForm;
 import com.example.microquest.model.Quest;
 import com.example.microquest.model.QuestSave;
+import com.example.microquest.model.Role;
 import com.example.microquest.model.UserProfile;
 import com.example.microquest.repository.QuestRepository;
 import com.example.microquest.repository.QuestSaveRepository;
 import com.example.microquest.repository.UserLeaderboardRow;
 import com.example.microquest.repository.UserProfileRepository;
+import com.example.microquest.repository.UserReportRepository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.PageRequest;
@@ -23,13 +25,16 @@ public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final QuestRepository questRepository;
     private final QuestSaveRepository questSaveRepository;
+    private final UserReportRepository userReportRepository;
 
     public UserProfileService(UserProfileRepository userProfileRepository,
                               QuestRepository questRepository,
-                              QuestSaveRepository questSaveRepository) {
+                              QuestSaveRepository questSaveRepository,
+                              UserReportRepository userReportRepository) {
         this.userProfileRepository = userProfileRepository;
         this.questRepository = questRepository;
         this.questSaveRepository = questSaveRepository;
+        this.userReportRepository = userReportRepository;
     }
 
     @Transactional(readOnly = true)
@@ -88,5 +93,16 @@ public class UserProfileService {
     public UserProfile getByUsername(String username) {
         return userProfileRepository.findByUsername(username.toLowerCase())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    public void deleteUser(Long id) {
+        UserProfile user = userProfileRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (user.getRole() == Role.ROLE_ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin accounts cannot be deleted");
+        }
+        userReportRepository.deleteByReportedUserOrReportingUser(user, user);
+        userProfileRepository.delete(user);
+    }
     }
 }
