@@ -24,6 +24,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Controller for all quest-related pages under {@code /quests}.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Paginated, filterable quest listing</li>
+ *   <li>Quest creation and editing (with admin override for author field)</li>
+ *   <li>Quest detail view with comments and submissions</li>
+ *   <li>Adding comments and saving quests to a user's profile</li>
+ * </ul>
+ * Admins bypass the normal review workflow: quests they create are
+ * immediately set to {@code APPROVED}.
+ * </p>
+ */
 @Controller
 @RequestMapping("/quests")
 public class QuestController {
@@ -32,6 +46,7 @@ public class QuestController {
     private final UserProfileService userProfileService;
     private final SubmissionService submissionService;
 
+    /** All dependencies are constructor-injected by Spring. */
     public QuestController(QuestService questService,
                            UserProfileService userProfileService,
                            SubmissionService submissionService) {
@@ -40,6 +55,11 @@ public class QuestController {
         this.submissionService = submissionService;
     }
 
+    /**
+     * Shows the paginated, filterable quest list.
+     * Supports optional {@code category} and {@code difficulty} filters;
+     * returns 6 quests per page.
+     */
     @GetMapping
     public String listQuests(@RequestParam(required = false) Category category,
                              @RequestParam(required = false) Difficulty difficulty,
@@ -52,6 +72,11 @@ public class QuestController {
         return "quests/list";
     }
 
+    /**
+     * Shows the quest-creation form.
+     * Pre-fills the author field with the current user.  Admins also see
+     * a user-select drop-down so they can create quests on behalf of others.
+     */
     @GetMapping("/new")
     public String showCreateForm(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         if (userDetails == null) return "redirect:/auth/login";
@@ -68,6 +93,14 @@ public class QuestController {
         return "quests/form";
     }
 
+    /**
+     * Processes the quest-creation form POST.
+     * <p>
+     * Non-admin users have the author field overridden with their own ID to
+     * prevent form-tampering.  Admin-created quests are auto-approved;
+     * regular-user quests enter a pending review queue.
+     * </p>
+     */
     @PostMapping
     public String createQuest(@AuthenticationPrincipal UserDetails userDetails,
                               @Valid @ModelAttribute("questForm") QuestForm questForm,
@@ -85,7 +118,7 @@ public class QuestController {
             return "quests/form";
         }
         if (!isAdmin) {
-            // Enforce current user as author (prevent form tampering)
+            // Enforce current user as author to prevent form-tampering by non-admins
             UserProfile currentUser = userProfileService.getByUsername(userDetails.getUsername());
             questForm.setAuthorId(currentUser.getId());
         }
@@ -97,6 +130,11 @@ public class QuestController {
         return "redirect:/quests/" + quest.getId();
     }
 
+    /**
+     * Renders the quest detail page with its comments and submissions.
+     * Admins see all submissions for the quest; regular users see only their own.
+     * Unauthenticated visitors see no submissions.
+     */
     @GetMapping("/{id}")
     public String showQuest(@PathVariable Long id,
                             @AuthenticationPrincipal UserDetails userDetails,
@@ -123,6 +161,10 @@ public class QuestController {
         return "quests/detail";
     }
 
+    /**
+     * Shows the quest-edit form pre-filled with the current quest data.
+     * Admins see a user-select drop-down to reassign the quest author.
+     */
     @GetMapping("/{id}/edit")
     public String showEditForm(@PathVariable Long id,
                                @AuthenticationPrincipal UserDetails userDetails,
@@ -151,6 +193,11 @@ public class QuestController {
         return "quests/form";
     }
 
+    /**
+     * Processes the quest-edit form POST.
+     * Non-admin users cannot change the quest author; the original author is
+     * re-applied to prevent form-tampering.
+     */
     @PostMapping("/{id}")
     public String updateQuest(@PathVariable Long id,
                               @AuthenticationPrincipal UserDetails userDetails,
@@ -179,6 +226,12 @@ public class QuestController {
         return "redirect:/quests/" + id;
     }
 
+    /**
+     * Handles a new comment POST for a quest.
+     * On validation failure the detail page is re-rendered (including the
+     * comment list and submissions) rather than redirecting, so that error
+     * messages are preserved.
+     */
     @PostMapping("/{id}/comments")
     public String addComment(@PathVariable Long id,
                              @AuthenticationPrincipal UserDetails userDetails,
@@ -206,6 +259,7 @@ public class QuestController {
         return "redirect:/quests/" + id;
     }
 
+    /** Saves (bookmarks) a quest to the current user's profile. */
     @PostMapping("/{id}/save")
     public String saveQuest(@PathVariable Long id,
                             @AuthenticationPrincipal UserDetails userDetails,

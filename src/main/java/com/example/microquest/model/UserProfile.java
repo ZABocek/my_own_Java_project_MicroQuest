@@ -5,6 +5,21 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA entity representing a registered user account.
+ * <p>
+ * Key fields:
+ * <ul>
+ *   <li>{@code active}       — set to {@code false} for permanently banned accounts.</li>
+ *   <li>{@code bannedUntil}  — non-null while a temporary ban is in effect.</li>
+ *   <li>{@code banCount}     — cumulative completed bans; drives tier escalation
+ *                              (0 → 1-month, 1 → 3-month, 2+ → permanent).</li>
+ *   <li>{@code photoIdPath}  — path to the uploaded government-ID file; visible to
+ *                              admins only.</li>
+ *   <li>{@code emailVerificationToken} — cleared once the user verifies their email.</li>
+ * </ul>
+ * </p>
+ */
 @Entity
 @Table(name = "user_profiles", indexes = {
         @Index(name = "idx_user_profile_username", columnList = "username"),

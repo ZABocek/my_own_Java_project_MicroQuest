@@ -3,6 +3,11 @@ package com.example.microquest.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Form DTO for creating or editing a user profile (admin user-management utility).
+ * Note: this path does not reset passwords; password management is separate
+ * via {@link com.example.microquest.dto.PasswordChangeForm}.
+ */
 public class UserProfileForm {
 
     @NotBlank

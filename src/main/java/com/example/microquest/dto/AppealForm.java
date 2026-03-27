@@ -2,6 +2,11 @@ package com.example.microquest.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * Form DTO for submitting a ban appeal.
+ * Bound to the appeal form at {@code /appeals/form} and validated
+ * by Spring MVC before being passed to {@link com.example.microquest.service.AdminService}.
+ */
 public class AppealForm {
 
     @NotNull

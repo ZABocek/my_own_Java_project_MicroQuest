@@ -3,6 +3,15 @@ package com.example.microquest.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity recording a single GIF (or video/image) submission by a user
+ * for a quest.
+ * <p>
+ * {@code gifPath} is a relative path inside the {@code uploads/gifs/}
+ * directory; use {@link com.example.microquest.service.FileStorageService#resolveGif}
+ * to obtain the absolute {@link java.nio.file.Path}.
+ * </p>
+ */
 @Entity
 @Table(name = "quest_submissions")
 public class QuestSubmission {

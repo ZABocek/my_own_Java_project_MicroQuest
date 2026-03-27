@@ -2,6 +2,10 @@ package com.example.microquest.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * Form DTO used by admins to issue a ban against a specific user.
+ * Submitted from the admin dashboard user-management panel.
+ */
 public class BanForm {
 
     @NotNull

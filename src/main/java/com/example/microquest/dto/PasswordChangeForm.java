@@ -2,6 +2,12 @@ package com.example.microquest.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * Form DTO for changing the currently authenticated user's password.
+ * Requires the current password for verification plus a new password
+ * (at least 8 chars, mixed case, digit, and special character) and a
+ * confirmation field that must match.
+ */
 public class PasswordChangeForm {
 
     @NotBlank(message = "Current password is required")

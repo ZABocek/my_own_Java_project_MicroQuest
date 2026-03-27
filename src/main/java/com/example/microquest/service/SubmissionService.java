@@ -15,6 +15,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Service for quest GIF/media submissions.
+ * <p>
+ * Handles file storage delegation to {@link FileStorageService}, access-control
+ * enforcement (only the submitter or an admin may view/delete a submission),
+ * and submission lifecycle queries.
+ * </p>
+ */
 @Service
 @Transactional
 public class SubmissionService {
@@ -34,6 +42,11 @@ public class SubmissionService {
         this.fileStorageService = fileStorageService;
     }
 
+    /**
+     * Stores the uploaded media file and creates a {@link com.example.microquest.model.QuestSubmission}
+     * record linking it to the quest and the user.
+     * Throws 400 if the file is invalid (wrong type, too large, or IO error).
+     */
     public QuestSubmission submitGif(Long questId, UserProfile user, MultipartFile gif, String caption) {
         Quest quest = questRepository.findById(questId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quest not found"));
@@ -53,26 +66,34 @@ public class SubmissionService {
         return submissionRepository.save(sub);
     }
 
+    /** Returns all submissions by a user across all quests, newest first. */
     @Transactional(readOnly = true)
     public List<QuestSubmission> getSubmissionsForUser(Long userId) {
         return submissionRepository.findAllByUserIdOrderBySubmittedAtDesc(userId);
     }
 
+    /** Returns all submissions for a quest (used by the admin view). */
     @Transactional(readOnly = true)
     public List<QuestSubmission> getSubmissionsForQuest(Long questId) {
         return submissionRepository.findAllByQuestIdOrderBySubmittedAtDesc(questId);
     }
 
+    /** Returns {@code true} if the user has submitted at least once. */
     @Transactional(readOnly = true)
     public boolean hasSubmitted(Long userId, Long questId) {
         return submissionRepository.existsByUserIdAndQuestId(userId, questId);
     }
 
+    /** Returns a user's own submissions for a specific quest, newest first. */
     @Transactional(readOnly = true)
     public List<QuestSubmission> getSubmissionsForUserAndQuest(Long userId, Long questId) {
         return submissionRepository.findAllByUserIdAndQuestIdOrderBySubmittedAtDesc(userId, questId);
     }
 
+    /**
+     * Fetches a submission, enforcing access-control: non-admins can only
+     * access their own submissions.  Throws 404 if not found, 403 if denied.
+     */
     @Transactional(readOnly = true)
     public QuestSubmission getSubmissionSecure(Long submissionId, Long requestingUserId, boolean isAdmin) {
         QuestSubmission sub = submissionRepository.findById(submissionId)
@@ -83,6 +104,11 @@ public class SubmissionService {
         return sub;
     }
 
+    /**
+     * Deletes a submission and its stored media file.
+     * Throws 403 if the requesting user is not the submitter and is not an admin.
+     * File deletion is best-effort: IO errors are ignored (file may already be gone).
+     */
     public void deleteSubmission(Long submissionId, Long requestingUserId, boolean isAdmin) {
         QuestSubmission sub = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));

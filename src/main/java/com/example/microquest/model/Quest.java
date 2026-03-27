@@ -20,6 +20,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA entity representing a user-created quest (activity challenge).
+ * <p>
+ * Quests go through a simple approval workflow:
+ * {@code PENDING_APPROVAL} → {@code APPROVED} or {@code REJECTED}.
+ * Admins bypass this flow and create quests directly in {@code APPROVED} state.
+ * </p>
+ * <p>
+ * The {@code @PrePersist} hook sets both {@code createdAt} and {@code updatedAt}
+ * on first save; {@code @PreUpdate} refreshes {@code updatedAt} on every edit.
+ * </p>
+ */
 @Entity
 @Table(name = "quests", indexes = {
         @Index(name = "idx_quest_created_at", columnList = "createdAt"),

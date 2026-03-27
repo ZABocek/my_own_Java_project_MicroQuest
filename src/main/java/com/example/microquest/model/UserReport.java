@@ -3,6 +3,13 @@ package com.example.microquest.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity recording a community report filed against a user.
+ * Reports are created via {@link com.example.microquest.service.AdminService#fileReport}
+ * and reviewed by admins on the admin reports dashboard.
+ * The {@code reviewed} flag is set to {@code true} when an admin dismisses
+ * or acts on the report.
+ */
 @Entity
 @Table(name = "user_reports")
 public class UserReport {

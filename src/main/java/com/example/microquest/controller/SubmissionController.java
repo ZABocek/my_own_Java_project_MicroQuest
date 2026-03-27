@@ -29,6 +29,21 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
+/**
+ * Controller for quest submission (GIF upload) operations under
+ * {@code /quests/{questId}/submissions}.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *   <li>Serving stored GIF/video/JPEG files via a secured endpoint
+ *       (only the submitter and admins may view a submission).</li>
+ *   <li>Rendering the submission form and processing multi-file GIF uploads.</li>
+ *   <li>Deleting submissions (submitter or admin only).</li>
+ *   <li>Handling {@link MaxUploadSizeExceededException} with a user-friendly
+ *       flash message instead of an error page.</li>
+ * </ul>
+ * </p>
+ */
 @Controller
 @RequestMapping("/quests/{questId}")
 public class SubmissionController {
@@ -37,6 +52,7 @@ public class SubmissionController {
     private final UserProfileService userProfileService;
     private final FileStorageService fileStorageService;
 
+    /** All dependencies are constructor-injected by Spring. */
     public SubmissionController(SubmissionService submissionService,
                                 UserProfileService userProfileService,
                                 FileStorageService fileStorageService) {
@@ -45,6 +61,12 @@ public class SubmissionController {
         this.fileStorageService = fileStorageService;
     }
 
+    /**
+     * Serves the stored GIF/video/image file for a submission.
+     * Access is restricted to the submitter and admins; all other callers
+     * receive a 403 (enforced in {@code SubmissionService#getSubmissionSecure}).
+     * Content-type is inferred from the file extension.
+     */
     @GetMapping("/submissions/{submissionId}/gif")
     @ResponseBody
     public ResponseEntity<Resource> serveGif(@PathVariable Long questId,
@@ -74,6 +96,10 @@ public class SubmissionController {
                 .body(resource);
     }
 
+    /**
+     * Renders the quest submission form and indicates whether the user has
+     * already submitted to this quest (to allow multiple submissions).
+     */
     @GetMapping("/submit")
     public String showSubmitForm(@PathVariable Long questId,
                                  @AuthenticationPrincipal UserDetails userDetails,
@@ -84,6 +110,12 @@ public class SubmissionController {
         return "quests/submit";
     }
 
+    /**
+     * Processes the multi-file GIF upload POST.
+     * At least one non-empty file is required.  Each valid file is stored via
+     * {@link FileStorageService} and a {@link com.example.microquest.model.QuestSubmission}
+     * record is created.  On success, redirects back to the quest detail page.
+     */
     @PostMapping("/submit")
     public String handleSubmit(@PathVariable Long questId,
                                @AuthenticationPrincipal UserDetails userDetails,
@@ -124,6 +156,11 @@ public class SubmissionController {
         }
     }
 
+    /**
+     * Caught when a multipart file exceeds the Spring size limit configured
+     * in {@code application.properties}.  Redirects back to the submit form
+     * with a user-friendly flash error.
+     */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public String handleMaxSizeException(MaxUploadSizeExceededException exc,
                                          HttpServletRequest request,
@@ -143,6 +180,11 @@ public class SubmissionController {
         return "redirect:/quests/" + questId + "/submit";
     }
 
+    /**
+     * Deletes a submission (and its stored GIF file).
+     * Only the original submitter or an admin may delete; the service layer
+     * enforces this access check and throws if violated.
+     */
     @PostMapping("/submissions/{submissionId}/delete")
     public String deleteSubmission(@PathVariable Long questId,
                                    @PathVariable Long submissionId,

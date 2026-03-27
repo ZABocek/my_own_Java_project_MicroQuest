@@ -18,6 +18,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service for the ban and appeal lifecycle.
+ * <p>
+ * Ban issuance escalates automatically based on the user's cumulative
+ * {@code banCount}:
+ * <ul>
+ *   <li>0 previous bans → 1-month temporary ban</li>
+ *   <li>1 previous ban  → 3-month temporary ban</li>
+ *   <li>2+ previous bans → permanent ban (account deactivated)</li>
+ * </ul>
+ * Appeal review: accepting an appeal lifts the ban and decrements
+ * {@code banCount} so escalation is not unfairly accelerated.
+ * </p>
+ */
 @Service
 @Transactional
 public class BanService {
@@ -91,12 +105,18 @@ public class BanService {
         return ban;
     }
 
+    /** Lifts an active ban: clears {@code bannedUntil}, re-activates the account. */
     public void liftBan(UserProfile user) {
         user.setBannedUntil(null);
         user.setActive(true);
         userProfileRepository.save(user);
     }
 
+    /**
+     * Submits a ban appeal on behalf of the banned user.
+     * Throws 403 if the user does not own the ban record, or 400 if an
+     * appeal already exists for this ban.
+     */
     public Appeal submitAppeal(Long banRecordId, UserProfile user, String message) {
         BanRecord ban = banRecordRepository.findById(banRecordId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ban record not found"));
@@ -123,6 +143,11 @@ public class BanService {
         return appeal;
     }
 
+    /**
+     * Processes an admin appeal decision.
+     * On acceptance: lifts the ban and decrements {@code banCount}.
+     * Always sends an email to the user with the decision and admin response.
+     */
     public Appeal reviewAppeal(Long appealId, boolean accept, String adminResponse) {
         Appeal appeal = appealRepository.findById(appealId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appeal not found"));
@@ -157,21 +182,28 @@ public class BanService {
         return appeal;
     }
 
+    /** Returns the full ban history for a user, most recent first. */
     @Transactional(readOnly = true)
     public List<BanRecord> getBanHistoryForUser(Long userId) {
         return banRecordRepository.findAllByUserIdOrderByBannedAtDesc(userId);
     }
 
+    /** Returns all appeals currently in PENDING status for the admin appeals queue. */
     @Transactional(readOnly = true)
     public List<Appeal> getPendingAppeals() {
         return appealRepository.findAllByStatusOrderBySubmittedAtDesc(AppealStatus.PENDING);
     }
 
+    /** Returns the appeal for a specific ban record, if one has been submitted. */
     @Transactional(readOnly = true)
     public Optional<Appeal> getAppealForBan(Long banRecordId) {
         return appealRepository.findByBanRecordId(banRecordId);
     }
 
+    /**
+     * Returns {@code true} if the account is permanently deactivated OR has an
+     * active temporary ban that has not yet expired.
+     */
     @Transactional(readOnly = true)
     public boolean isCurrentlyBanned(UserProfile user) {
         return !user.isActive()

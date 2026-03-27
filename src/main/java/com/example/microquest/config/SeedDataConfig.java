@@ -20,6 +20,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Populates the database with initial demo data when it is empty.
+ * <p>
+ * On every application start-up this class first checks whether any users or
+ * quests already exist.  If they do, only the admin account guarantee is
+ * re-applied (to handle the case where the database was partially reset).
+ * Otherwise it inserts a complete set of seed users, quests, comments, and
+ * quest-saves so that a freshly created database has realistic content for
+ * development and demonstration purposes.
+ * </p>
+ * <p>
+ * All seed configuration values (admin credentials, demo password) are
+ * externalised via {@code @Value} so they can be overridden through the
+ * {@code application.properties} file or a git-ignored {@code .env} file.
+ * </p>
+ */
 @Configuration
 public class SeedDataConfig {
 
@@ -28,6 +44,13 @@ public class SeedDataConfig {
     /** Demo password for non-admin seed users. */
     private static final String DEMO_PASSWORD = "Demo123!";
 
+    /**
+     * Spring Boot {@link CommandLineRunner} that seeds the database once after
+     * the application context has fully started.
+     *
+     * <p>Parameters are injected by Spring from the application context and from
+     * {@code application.properties} / {@code .env}.</p>
+     */
     @Bean
     CommandLineRunner seedData(UserProfileRepository userProfileRepository,
                                QuestRepository questRepository,
@@ -40,7 +63,7 @@ public class SeedDataConfig {
                                @Value("${admin.displayName:Drewadoo}") String adminDisplayName) {
         return args -> {
             if (userProfileRepository.count() > 0 || questRepository.count() > 0) {
-                // Ensure admin account always exists even after DB already seeded
+                // Database already seeded — only ensure the admin account exists
                 ensureAdminExists(userProfileRepository, passwordEncoder,
                         adminUsername, adminEmail, adminPassword, adminDisplayName);
                 return;
@@ -126,6 +149,13 @@ public class SeedDataConfig {
         };
     }
 
+    /**
+     * Idempotently ensures the admin account exists in the database.
+     * <p>
+     * Called on every start-up after the initial seed to handle the edge case
+     * where the database was wiped and re-created without removing the admin row.
+     * </p>
+     */
     private void ensureAdminExists(UserProfileRepository repo, PasswordEncoder encoder,
                                    String username, String email, String rawPassword, String displayName) {
         String normalizedUsername = username.toLowerCase();
@@ -137,6 +167,10 @@ public class SeedDataConfig {
         }
     }
 
+    /**
+     * Convenience factory for building a new {@link UserProfile} without
+     * boilerplate field-by-field assignment.
+     */
     private static UserProfile buildUser(String username, String displayName, String email,
                                           String passwordHash, Role role, String homeCity, String bio) {
         UserProfile u = new UserProfile();
@@ -146,12 +180,17 @@ public class SeedDataConfig {
         u.setPasswordHash(passwordHash);
         u.setRole(role);
         u.setActive(true);
-        u.setEmailVerified(true); // Seed users pre-verified
+        u.setEmailVerified(true); // Seed users are pre-verified — no email confirmation flow
         u.setHomeCity(homeCity);
         u.setBio(bio);
         return u;
     }
 
+    /**
+     * Convenience factory for building a new {@link Quest} with all required
+     * fields pre-populated and the status set to {@link QuestStatus#APPROVED}
+     * (seed quests bypass the normal admin review workflow).
+     */
     private static Quest buildQuest(String title, String summary, String description,
                                      Category category, Difficulty difficulty,
                                      int minutes, boolean indoor, String tags, UserProfile author) {

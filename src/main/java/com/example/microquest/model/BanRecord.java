@@ -3,6 +3,16 @@ package com.example.microquest.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity recording a single ban issued against a {@link UserProfile}.
+ * <p>
+ * The ban tier ({@code ONE_MONTH}, {@code THREE_MONTHS}, or {@code PERMANENT})
+ * is determined at issue time by {@link com.example.microquest.service.BanService}
+ * based on the user's cumulative {@code banCount}.  Permanent bans set
+ * {@link UserProfile#isActive()} to {@code false}; temporary bans set
+ * {@link UserProfile#getBannedUntil()} to a future timestamp.
+ * </p>
+ */
 @Entity
 @Table(name = "ban_records")
 public class BanRecord {

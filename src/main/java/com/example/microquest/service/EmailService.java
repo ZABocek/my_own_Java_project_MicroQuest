@@ -9,6 +9,23 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+/**
+ * Best-effort HTML email service.
+ * <p>
+ * All public send methods delegate to the private {@link #trySend} helper which
+ * catches any {@link jakarta.mail.MessagingException} and logs a warning rather
+ * than propagating the exception.  This ensures that SMTP failures never abort
+ * user-facing operations (registration, ban, appeal, quest approval).
+ * </p>
+ * <p>
+ * If {@code spring.mail.username} is not configured the service skips sending
+ * entirely and logs an informational message instead.
+ * </p>
+ * <p>
+ * All user-supplied strings are passed through {@link #htmlEscape} before being
+ * embedded in the HTML body to prevent XSS in email clients.
+ * </p>
+ */
 @Service
 public class EmailService {
 
@@ -26,6 +43,7 @@ public class EmailService {
         this.fromAddress = fromAddress;
     }
 
+    /** Sends an HTML welcome email with a one-time email-verification link. */
     public void sendWelcomeEmail(String toEmail, String displayName, String verificationToken) {
         String link = baseUrl + "/auth/verify?token=" + verificationToken;
         String body = "<h2>Welcome to MicroQuest, " + htmlEscape(displayName) + "!</h2>"
@@ -35,6 +53,7 @@ public class EmailService {
         trySend(toEmail, "MicroQuest – Verify your email", body);
     }
 
+    /** Sends the temporary-ban notification with expiry date and an appeal link. */
     public void sendTempBanEmail(String toEmail, String displayName, String reason, String expiryDate, Long banRecordId) {
         String appealLink = baseUrl + "/appeal/submit/" + banRecordId;
         String body = "<h2>MicroQuest – Account Temporarily Suspended</h2>"
@@ -46,6 +65,7 @@ public class EmailService {
         trySend(toEmail, "MicroQuest – Account Suspended", body);
     }
 
+    /** Sends the permanent-ban notification. No appeal link is included. */
     public void sendPermanentBanEmail(String toEmail, String displayName, String reason) {
         String body = "<h2>MicroQuest – Account Permanently Suspended</h2>"
                 + "<p>Hello " + htmlEscape(displayName) + ",</p>"
@@ -54,6 +74,7 @@ public class EmailService {
         trySend(toEmail, "MicroQuest – Account Permanently Suspended", body);
     }
 
+    /** Sends the appeal-decision email indicating whether the ban was lifted. */
     public void sendAppealDecisionEmail(String toEmail, String displayName, boolean accepted, String adminResponse) {
         String result = accepted ? "Accepted" : "Rejected";
         String body = "<h2>MicroQuest – Appeal " + result + "</h2>"
@@ -64,6 +85,7 @@ public class EmailService {
         trySend(toEmail, "MicroQuest – Appeal " + result, body);
     }
 
+    /** Notifies the quest author that their quest was approved and is now live. */
     public void sendQuestApprovedEmail(String toEmail, String displayName, String questTitle) {
         String body = "<h2>MicroQuest – Quest Approved!</h2>"
                 + "<p>Hello " + htmlEscape(displayName) + ",</p>"
@@ -71,6 +93,7 @@ public class EmailService {
         trySend(toEmail, "MicroQuest – Quest Approved", body);
     }
 
+    /** Notifies the quest author that their quest was rejected and why. */
     public void sendQuestRejectedEmail(String toEmail, String displayName, String questTitle, String reason) {
         String body = "<h2>MicroQuest – Quest Not Approved</h2>"
                 + "<p>Hello " + htmlEscape(displayName) + ",</p>"
@@ -80,6 +103,10 @@ public class EmailService {
         trySend(toEmail, "MicroQuest – Quest Not Approved", body);
     }
 
+    /**
+     * Sends a single HTML email; skips silently if SMTP is not configured.
+     * Any {@link jakarta.mail.MessagingException} is caught and logged as a warning.
+     */
     private void trySend(String to, String subject, String htmlBody) {
         if (fromAddress == null || fromAddress.isBlank()) {
             log.info("[Email] SMTP not configured – skipped. To={} Subject={}", to, subject);
@@ -99,6 +126,10 @@ public class EmailService {
         }
     }
 
+    /**
+     * Escapes HTML special characters in user-supplied strings before embedding
+     * them in the email body, preventing XSS in email clients.
+     */
     private String htmlEscape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");

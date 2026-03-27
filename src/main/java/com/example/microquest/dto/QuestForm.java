@@ -8,6 +8,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Form DTO for creating or editing a {@link com.example.microquest.model.Quest}.
+ * <p>
+ * The {@code authorId} field is pre-filled with the current user's ID.
+ * Non-admin users have this field overridden by the controller even if a
+ * different value is submitted, preventing author spoofing.
+ * </p>
+ */
 public class QuestForm {
 
     @NotBlank

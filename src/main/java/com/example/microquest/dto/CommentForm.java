@@ -3,6 +3,10 @@ package com.example.microquest.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Form DTO for adding a comment to a quest.
+ * Body is limited to 800 characters and must not be blank.
+ */
 public class CommentForm {
 
     @NotBlank

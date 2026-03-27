@@ -20,6 +20,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Controller for user-profile pages under {@code /users}.
+ * <p>
+ * Provides: listing all users, viewing a user's public profile (authored
+ * quests, saved quests, GIF submissions, ban history), editing a profile,
+ * and submitting a report against another user.
+ * </p>
+ */
 @Controller
 @RequestMapping("/users")
 public class UserController {
@@ -29,6 +37,7 @@ public class UserController {
     private final BanService banService;
     private final AdminService adminService;
 
+    /** All dependencies are constructor-injected by Spring. */
     public UserController(UserProfileService userProfileService,
                           SubmissionService submissionService,
                           BanService banService,
@@ -39,18 +48,21 @@ public class UserController {
         this.adminService = adminService;
     }
 
+    /** Lists all registered users (admin view, linked from the admin dashboard). */
     @GetMapping
     public String listUsers(Model model) {
         model.addAttribute("users", userProfileService.getAllUsers());
         return "users/list";
     }
 
+    /** Shows the user-creation form (admin utility; regular registration goes through AuthController). */
     @GetMapping("/new")
     public String showCreateUserForm(Model model) {
         model.addAttribute("userProfileForm", new UserProfileForm());
         return "users/form";
     }
 
+    /** Processes the user-creation form POST and redirects to the new profile page. */
     @PostMapping
     public String createUser(@Valid @ModelAttribute("userProfileForm") UserProfileForm userProfileForm,
                              BindingResult bindingResult,
@@ -63,6 +75,11 @@ public class UserController {
         return "redirect:/users/" + user.getId();
     }
 
+    /**
+     * Renders a user's public profile page.
+     * Flags {@code isOwnProfile} and {@code isAdmin} so the template can
+     * conditionally render edit/report controls.
+     */
     @GetMapping("/{id}")
     public String showUser(@PathVariable Long id,
                            @AuthenticationPrincipal UserDetails userDetails,
@@ -85,6 +102,11 @@ public class UserController {
         return "users/detail";
     }
 
+    /**
+     * Submits a community report against another user.
+     * Delegates to {@link AdminService#fileReport} which creates a
+     * {@link com.example.microquest.model.UserReport} record for admin review.
+     */
     @PostMapping("/{id}/report")
     public String reportUser(@PathVariable Long id,
                              @AuthenticationPrincipal UserDetails userDetails,

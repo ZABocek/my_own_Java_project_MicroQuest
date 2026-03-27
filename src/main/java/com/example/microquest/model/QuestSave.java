@@ -14,6 +14,11 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a user "saving" (bookmarking) a quest.
+ * The unique constraint on {@code (user_id, quest_id)} prevents duplicate saves.
+ * Saved quests appear on the user's profile page.
+ */
 @Entity
 @Table(name = "quest_saves",
         uniqueConstraints = {

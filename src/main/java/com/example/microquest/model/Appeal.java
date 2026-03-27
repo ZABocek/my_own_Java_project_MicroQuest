@@ -3,6 +3,15 @@ package com.example.microquest.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a ban appeal submitted by a banned user.
+ * <p>
+ * Each {@link BanRecord} may have at most one {@code Appeal} (enforced by
+ * the unique constraint on {@code ban_record_id}).  An admin reviews the
+ * appeal and sets the {@code status} to {@code ACCEPTED} or {@code REJECTED},
+ * optionally writing an {@code adminResponse}.
+ * </p>
+ */
 @Entity
 @Table(name = "appeals")
 public class Appeal {

@@ -15,6 +15,20 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Service for account-lifecycle operations: registration, email verification,
+ * and password change.
+ * <p>
+ * Registration flow:
+ * <ol>
+ *   <li>Normalise username/email to lower-case.</li>
+ *   <li>Check for duplicate username or email; throw {@link IllegalArgumentException} on conflict.</li>
+ *   <li>Hash the password with BCrypt and persist the new {@link com.example.microquest.model.UserProfile}.</li>
+ *   <li>Attempt to store the optional photo-ID upload (best-effort; errors are logged and ignored).</li>
+ *   <li>Send a welcome/verification email (best-effort; SMTP errors are logged and ignored).</li>
+ * </ol>
+ * </p>
+ */
 @Service
 @Transactional
 public class AuthService {
@@ -36,6 +50,12 @@ public class AuthService {
         this.emailService = emailService;
     }
 
+    /**
+     * Registers a new user account.
+     * Validates uniqueness, hashes the password, optionally stores a photo-ID
+     * file, and sends a welcome/verification email.  Returns the saved
+     * {@link com.example.microquest.model.UserProfile}.
+     */
     public UserProfile register(RegistrationForm form, MultipartFile photoIdFile) {
         String username = form.getUsername().trim().toLowerCase();
         String email = form.getEmail().trim().toLowerCase();
@@ -70,7 +90,7 @@ public class AuthService {
 
         UserProfile saved = userProfileRepository.save(user);
 
-        // Store photo ID after we have the user ID
+        // Store photo ID after we have the user ID (needed for unique filename)
         if (photoIdFile != null && !photoIdFile.isEmpty()) {
             try {
                 String path = fileStorageService.storePhotoId(photoIdFile, saved.getId());
@@ -91,6 +111,11 @@ public class AuthService {
         return saved;
     }
 
+    /**
+     * Verifies a user's email address using the one-time token sent in the
+     * welcome email.  On success, sets {@code emailVerified = true} and clears
+     * the token.  Returns {@code false} if the token is not found.
+     */
     public boolean verifyEmail(String token) {
         return userProfileRepository.findByEmailVerificationToken(token)
                 .map(user -> {
@@ -101,6 +126,11 @@ public class AuthService {
                 }).orElse(false);
     }
 
+    /**
+     * Changes the user's password after verifying the current password matches.
+     * Throws {@link IllegalArgumentException} if the current password is wrong
+     * or the two new-password fields do not match.
+     */
     public void changePassword(UserProfile user, PasswordChangeForm form) {
         if (!passwordEncoder.matches(form.getCurrentPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Current password is incorrect");
@@ -112,6 +142,7 @@ public class AuthService {
         userProfileRepository.save(user);
     }
 
+    /** Looks up a user by username (case-insensitive); throws if not found. */
     @Transactional(readOnly = true)
     public UserProfile findByUsername(String username) {
         return userProfileRepository.findByUsername(username.toLowerCase())

@@ -24,6 +24,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
+/**
+ * Core business-logic service for quest management.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *   <li>Paginated, filterable quest retrieval for the public list view.</li>
+ *   <li>Quest creation (with automatic approval for admin authors) and editing.</li>
+ *   <li>Quest bookmarking (saves) with duplicate-save protection.</li>
+ *   <li>Comment creation.</li>
+ *   <li>Aggregate counts for the home-page statistics panel.</li>
+ * </ul>
+ * </p>
+ */
 @Service
 @Transactional
 public class QuestService {
@@ -43,6 +56,11 @@ public class QuestService {
         this.questSaveRepository = questSaveRepository;
     }
 
+    /**
+     * Returns a paginated, optionally filtered page of approved quests.
+     * Dispatches to the appropriate repository query based on which filters
+     * ({@code category}, {@code difficulty}, both, or neither) are provided.
+     */
     @Transactional(readOnly = true)
     public Page<Quest> getQuestPage(Category category, Difficulty difficulty, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -59,12 +77,18 @@ public class QuestService {
         return questRepository.findByStatusOrderByCreatedAtDesc(approved, pageable);
     }
 
+    /** Fetches a quest by ID or throws 404 if not found. */
     @Transactional(readOnly = true)
     public Quest getQuestOrThrow(Long id) {
         return questRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quest not found"));
     }
 
+    /**
+     * Creates a new quest from the form data.
+     * Admin-authored quests are immediately {@code APPROVED};
+     * regular-user quests start as {@code PENDING_APPROVAL}.
+     */
     public Quest createQuest(QuestForm form) {
         UserProfile author = userProfileRepository.findById(form.getAuthorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author not found"));
@@ -80,6 +104,7 @@ public class QuestService {
         return questRepository.save(quest);
     }
 
+    /** Updates an existing quest's fields from the form data. Preserves current status. */
     public Quest updateQuest(Long id, QuestForm form) {
         Quest quest = getQuestOrThrow(id);
         UserProfile author = userProfileRepository.findById(form.getAuthorId())
@@ -88,6 +113,10 @@ public class QuestService {
         return questRepository.save(quest);
     }
 
+    /**
+     * Bookmarks a quest for a user.  If the user has already saved the quest,
+     * this is a no-op (idempotent).
+     */
     public void saveQuest(Long questId, Long userId) {
         Quest quest = getQuestOrThrow(questId);
         UserProfile user = userProfileRepository.findById(userId)
@@ -113,6 +142,7 @@ public class QuestService {
         return commentRepository.save(comment);
     }
 
+    /** Returns the 5 most recently approved quests for the home-page snapshot. */
     @Transactional(readOnly = true)
     public List<Quest> getRecentQuests() {
         return questRepository.findTop5ByStatusOrderByCreatedAtDesc(QuestStatus.APPROVED);
@@ -128,26 +158,31 @@ public class QuestService {
         return commentRepository.save(comment);
     }
 
+    /** Returns the top-10 most-saved approved quests for the leaderboard. */
     @Transactional(readOnly = true)
     public List<QuestLeaderboardRow> getTopSavedQuests() {
         return questRepository.findTopSavedQuests(PageRequest.of(0, 10));
     }
 
+    /** Returns all comments for a quest, newest first. */
     @Transactional(readOnly = true)
     public List<Comment> getCommentsForQuest(Long questId) {
         return commentRepository.findAllByQuestIdOrderByCreatedAtDesc(questId);
     }
 
+    /** Total number of quests in the database (for the home-page counter). */
     @Transactional(readOnly = true)
     public long countQuests() {
         return questRepository.count();
     }
 
+    /** Total number of comments across all quests (for the home-page counter). */
     @Transactional(readOnly = true)
     public long countComments() {
         return commentRepository.count();
     }
 
+    /** Internal helper: copies form field values onto the Quest entity. */
     private void applyForm(Quest quest, QuestForm form, UserProfile author) {
         quest.setTitle(form.getTitle().trim());
         quest.setSummary(form.getSummary().trim());

@@ -2,6 +2,10 @@ package com.example.microquest.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * Form DTO for filing a community report against another user.
+ * Submitted from a user's public profile page and queued for admin review.
+ */
 public class ReportUserForm {
 
     @NotNull

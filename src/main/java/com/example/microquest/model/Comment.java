@@ -13,6 +13,12 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a comment left by a user on an approved quest.
+ * Comments are sorted by {@code createdAt} on the quest detail page.
+ * The composite indexes on {@code quest_id} and {@code author_id} speed up
+ * the per-quest and per-user comment lookups.
+ */
 @Entity
 @Table(name = "comments", indexes = {
         @Index(name = "idx_comment_quest", columnList = "quest_id"),

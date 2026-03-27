@@ -2,6 +2,16 @@ package com.example.microquest.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * Form DTO for new-user registration.
+ * <p>
+ * Validates username format (letters, digits, underscore, hyphen only),
+ * email format, and enforces a strong-password policy via a regex pattern:
+ * at least 8 characters with one uppercase, one lowercase, one digit, and
+ * one special character.  The {@code confirmPassword} field is checked
+ * against {@code password} in {@link com.example.microquest.service.AuthService}.
+ * </p>
+ */
 public class RegistrationForm {
 
     @NotBlank(message = "Username is required")

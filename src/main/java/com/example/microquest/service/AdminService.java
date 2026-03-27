@@ -15,6 +15,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Service for admin-only moderation tasks: quest approval/rejection,
+ * user deletion, and user-report management.
+ * <p>
+ * All mutating methods are transactional.  Email notifications are sent
+ * best-effort (failures are silently swallowed so the admin action still completes).
+ * </p>
+ */
 @Service
 @Transactional
 public class AdminService {
@@ -24,6 +32,7 @@ public class AdminService {
     private final UserReportRepository userReportRepository;
     private final EmailService emailService;
 
+    /** All dependencies are constructor-injected by Spring. */
     public AdminService(QuestRepository questRepository,
                         UserProfileRepository userProfileRepository,
                         UserReportRepository userReportRepository,
@@ -34,11 +43,16 @@ public class AdminService {
         this.emailService = emailService;
     }
 
+    /** Returns all quests currently awaiting admin approval, newest first. */
     @Transactional(readOnly = true)
     public List<Quest> getPendingQuests() {
         return questRepository.findAllByStatusOrderByCreatedAtDesc(QuestStatus.PENDING_APPROVAL);
     }
 
+    /**
+     * Approves a quest and notifies the author by email.
+     * Sets {@code status} to {@code APPROVED} and persists the change.
+     */
     public Quest approveQuest(Long questId) {
         Quest quest = questRepository.findById(questId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quest not found"));
@@ -54,6 +68,10 @@ public class AdminService {
         return quest;
     }
 
+    /**
+     * Rejects a quest with an admin-provided reason and notifies the author by email.
+     * Sets {@code status} to {@code REJECTED}.
+     */
     public Quest rejectQuest(Long questId, String reason) {
         Quest quest = questRepository.findById(questId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quest not found"));
@@ -69,6 +87,10 @@ public class AdminService {
         return quest;
     }
 
+    /**
+     * Creates a {@link com.example.microquest.model.UserReport} record for
+     * admin review.  The {@code reviewed} flag is initially {@code false}.
+     */
     public UserReport fileReport(UserProfile reportingUser, Long reportedUserId, String reason) {
         UserProfile reported = userProfileRepository.findById(reportedUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -82,6 +104,7 @@ public class AdminService {
         return userReportRepository.save(report);
     }
 
+    /** Marks a report as reviewed (dismissed) by an admin. */
     public void markReportReviewed(Long reportId) {
         userReportRepository.findById(reportId).ifPresent(r -> {
             r.setReviewed(true);
@@ -89,6 +112,7 @@ public class AdminService {
         });
     }
 
+    /** Returns the count of quests currently awaiting approval (for the admin dashboard badge). */
     @Transactional(readOnly = true)
     public long countPendingQuests() {
         return questRepository.findAllByStatusOrderByCreatedAtDesc(QuestStatus.PENDING_APPROVAL).size();
